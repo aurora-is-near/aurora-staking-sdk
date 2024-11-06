@@ -1,0 +1,43 @@
+{
+  "name": "@aurora-is-near/staking",
+  "version": "1.0.0",
+  "description": "Contains logic for staking and unstaking Aurora",
+  "main": "dist/index.js",
+  "author": "Alex Mendes",
+  "license": "UNLICENSED",
+  "scripts": {
+    "lint": "eslint . --ext .js,.ts",
+    "test": "jest",
+    "typecheck": "tsc --noEmit",
+    "clean": "rimraf dist",
+    "prebuild": "yarn clean",
+    "build": "tsc"
+  },
+  "engines": {
+    "node": ">=20.9.0"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
+  "devDependencies": {
+    "@aurora-is-near/eslint-config": "^1.0.0",
+    "@aurora-is-near/semantic-release-config": "^1.1.1",
+    "@babel/core": "^7.17.10",
+    "@babel/plugin-transform-runtime": "^7.17.0",
+    "@babel/preset-env": "^7.16.11",
+    "@babel/preset-typescript": "^7.16.7",
+    "@commitlint/config-conventional": "^19.2.2",
+    "@types/jest": "^29.0.0",
+    "@types/node": "^17.0.31",
+    "eslint": "^8.57.0",
+    "husky": "^9.0.11",
+    "jest": "^29.0.0",
+    "prettier": "^3.2.5",
+    "rimraf": "^3.0.2",
+    "semantic-release": "^24.0.0",
+    "ts-jest": "^29.1.0",
+    "typescript": "^5.1.0"
+  }
+}

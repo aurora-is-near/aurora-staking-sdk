@@ -11,7 +11,6 @@ import {
   getIsPaused,
   getPendingWithdrawals,
   getStreamedAmounts,
-  getStreamPrices,
   getStreamsProgress,
   getStreamsSchedule,
   getTotalShares,
@@ -37,12 +36,17 @@ type StakingProviderProps = {
   isConnected: boolean;
   network: AuroraNetwork;
   children: ReactNode;
+  getStreamPrices: (streamNames: string[]) => Promise<{
+    prices: number[];
+    marketCaps: number[];
+  }>;
 };
 
 export const StakingProvider = ({
   isConnected,
   network,
   children,
+  getStreamPrices,
 }: StakingProviderProps) => {
   const networkConfig = config[network];
   const { tokenStreams } = networkConfig;

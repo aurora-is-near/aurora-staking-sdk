@@ -1,4 +1,3 @@
-import { differenceInMinutes } from 'date-fns';
 import { BigNumber, ethers, providers } from 'ethers';
 import { stakingAbi } from './abis/staking';
 import { erc20abi } from './abis/erc20';
@@ -262,54 +261,6 @@ export const calculateStakedPctOfSupply = (
   return pct;
 };
 
-export const getStreamPrices = async (
-  names: string[],
-): Promise<{ prices: number[]; marketCaps: number[] }> => {
-  // Token ids in coingecko: https://docs.google.com/spreadsheets/d/1wTTuxXt8n9q7C4NDXqQpI3wpKu1_5bGVmP9Xz0XGSyU/
-
-  let refetch = false;
-  let data: any = null;
-
-  // Get cached data from localStorage
-  const localStorageData = localStorage.getItem('stream-prices');
-
-  data = localStorageData && JSON.parse(localStorageData);
-
-  // If there's no data or it's over a minute old, refetch
-  if (
-    !data ||
-    (data?.timestamp &&
-      differenceInMinutes(new Date(), new Date(data.timestamp)) > 0)
-  ) {
-    refetch = true;
-  }
-
-  if (refetch) {
-    // Get fresh data and save to localStorage
-    const url = `/api/market/prices`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    data = await response.json();
-
-    localStorage.setItem(
-      'stream-prices',
-      JSON.stringify({ ...data, timestamp: Date.now() }),
-    );
-  }
-
-  return {
-    prices: names.map((name) => (name === 'vote' ? 0 : data[name].usd)),
-    marketCaps: names.map((name) =>
-      name === 'vote' ? 0 : data[name].usd_market_cap,
-    ),
-  };
-};
-
 export const getIsPaused = async (
   provider: providers.JsonRpcProvider,
   networkConfig: AuroraNetworkConfig,
@@ -322,7 +273,7 @@ export const getIsPaused = async (
 
   const pausedFlag = await staking.paused();
 
-  return !!(pausedFlag.toNumber() & 1);
+  return pausedFlag.toNumber() === 1;
 };
 
 export const approveStaking = async (

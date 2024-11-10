@@ -3,7 +3,7 @@ import { createContext } from 'react';
 import { Withdrawal } from './types/withdrawal';
 import { Stream } from './types/stream';
 
-type StackingContext = {
+export type StakingContextType = {
   accountSynced: boolean;
   balance: BigNumber;
   voteBalance: BigNumber;
@@ -33,4 +33,4 @@ type StackingContext = {
   claimAllAndSync: () => Promise<void>;
 };
 
-export const StakingContext = createContext<StackingContext | null>(null);
+export const StakingContext = createContext<StakingContextType | null>(null);

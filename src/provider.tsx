@@ -137,6 +137,15 @@ export const StakingProvider = ({
     setVotePowerPct(votePower);
   }, [streamDecimals, voteIndex, voteSupply, voteTotalBalance]);
 
+  const fetchStreamPrices = useCallback(async () => {
+    return getStreamPrices([
+      'aurora-near',
+      ...tokenStreams
+        .map((stream) => stream.coingeckoName)
+        .filter((name) => name !== 'vote'),
+    ]);
+  }, [getStreamPrices, tokenStreams]);
+
   const syncConnectedAccount = useCallback(async () => {
     try {
       if (!account) {
@@ -177,10 +186,7 @@ export const StakingProvider = ({
           provider,
           networkConfig,
         ),
-        getStreamPrices([
-          'aurora-near',
-          ...tokenStreams.map((stream) => stream.coingeckoName),
-        ]),
+        fetchStreamPrices(),
         getIsPaused(provider, networkConfig),
       ]);
 
@@ -220,12 +226,11 @@ export const StakingProvider = ({
   }, [
     account,
     auroraToken,
-    getStreamPrices,
+    fetchStreamPrices,
     networkConfig,
     provider,
     streamDecimals,
     streamIds,
-    tokenStreams,
     userShares,
     voteId,
     voteIndex,
@@ -249,10 +254,7 @@ export const StakingProvider = ({
     const [totalStaked, streamsSchedule, streamPrices] = await Promise.all([
       getTotalStaked(provider, networkConfig),
       getStreamsSchedule(streamIds, provider, networkConfig),
-      getStreamPrices([
-        'aurora-near',
-        ...tokenStreams.map((stream) => stream.coingeckoName),
-      ]),
+      fetchStreamPrices(),
     ]);
 
     const aprs = calculateAprs(
@@ -311,12 +313,11 @@ export const StakingProvider = ({
 
     setStakedPct(newStakedPct);
   }, [
-    getStreamPrices,
+    fetchStreamPrices,
     networkConfig,
     provider,
     streamDecimals,
     streamIds,
-    tokenStreams,
     voteIndex,
   ]);
 

@@ -1,4 +1,11 @@
-import { ReactNode, useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { BigNumber, ethers } from 'ethers';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
 import {
@@ -51,25 +58,29 @@ export const StakingProvider = ({
   const networkConfig = config[network];
   const { tokenStreams } = networkConfig;
 
-  const streamIds = [0, ...tokenStreams.map((stream) => stream.id)];
-  const streamDecimals = [18, ...tokenStreams.map((stream) => stream.decimals)];
+  const streamIds = useMemo(
+    () => [0, ...tokenStreams.map((stream) => stream.id)],
+    [tokenStreams],
+  );
+
+  const streamDecimals = useMemo(
+    () => [18, ...tokenStreams.map((s) => s.decimals)],
+    [tokenStreams],
+  );
+
   const voteIndex = tokenStreams.findIndex((s) => s.symbol === 'VOTE');
   const voteId = tokenStreams.find((s) => s.symbol === 'VOTE')!.id;
 
-  const provider = new ethers.providers.JsonRpcBatchProvider(
-    networkConfig.rpcUrl,
+  const { current: provider } = useRef(
+    new ethers.providers.JsonRpcBatchProvider(networkConfig.rpcUrl),
   );
 
-  const voteToken = new ethers.Contract(
-    tokenStreams[voteIndex]!.address,
-    erc20abi,
-    provider,
+  const { current: voteToken } = useRef(
+    new ethers.Contract(tokenStreams[voteIndex]!.address, erc20abi, provider),
   );
 
-  const auroraToken = new ethers.Contract(
-    networkConfig.tokenContractAddress,
-    erc20abi,
-    provider,
+  const { current: auroraToken } = useRef(
+    new ethers.Contract(networkConfig.tokenContractAddress, erc20abi, provider),
   );
 
   const [accountSynced, setAccountSynced] = useState(false);
@@ -124,9 +135,9 @@ export const StakingProvider = ({
       );
 
     setVotePowerPct(votePower);
-  }, [voteSupply, voteTotalBalance]);
+  }, [streamDecimals, voteIndex, voteSupply, voteTotalBalance]);
 
-  const syncConnectedAccount = async () => {
+  const syncConnectedAccount = useCallback(async () => {
     try {
       if (!account) {
         return;
@@ -206,9 +217,22 @@ export const StakingProvider = ({
     } catch (error) {
       console.error(error, 'Failed to sync account');
     }
-  };
+  }, [
+    account,
+    auroraToken,
+    getStreamPrices,
+    networkConfig,
+    provider,
+    streamDecimals,
+    streamIds,
+    tokenStreams,
+    userShares,
+    voteId,
+    voteIndex,
+    voteToken,
+  ]);
 
-  const syncAllowance = async () => {
+  const syncAllowance = useCallback(async () => {
     if (!account) {
       return;
     }
@@ -219,7 +243,7 @@ export const StakingProvider = ({
     );
 
     setAllowance(newAllowance);
-  };
+  }, [account, auroraToken, networkConfig.stakingContractAddress]);
 
   const init = useCallback(async () => {
     const [totalStaked, streamsSchedule, streamPrices] = await Promise.all([
@@ -286,13 +310,21 @@ export const StakingProvider = ({
     );
 
     setStakedPct(newStakedPct);
-  }, []);
+  }, [
+    getStreamPrices,
+    networkConfig,
+    provider,
+    streamDecimals,
+    streamIds,
+    tokenStreams,
+    voteIndex,
+  ]);
 
   useEffect(() => {
     init().catch((error) => {
       console.error(`Failed to initialize Staking Provider: ${error}`);
     });
-  }, []);
+  }, [init]);
 
   useEffect(() => {
     if (!isConnected) {
@@ -306,7 +338,7 @@ export const StakingProvider = ({
     }
 
     void syncConnectedAccount();
-  }, [account, isConnected]);
+  }, [account, isConnected, syncConnectedAccount]);
 
   const approveAndSync = useCallback(async () => {
     if (!web3Provider) {
@@ -322,7 +354,7 @@ export const StakingProvider = ({
     await approveStaking(web3Provider, networkConfig);
     await sleep(2000);
     await syncAllowance();
-  }, [chainId, web3Provider]);
+  }, [chainId, networkConfig, switchChain, syncAllowance, web3Provider]);
 
   const stakeAndSync = useCallback(
     async (amount: BigNumber) => {
@@ -340,7 +372,7 @@ export const StakingProvider = ({
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, web3Provider],
+    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
   );
 
   const unstakeAndSync = useCallback(
@@ -359,7 +391,7 @@ export const StakingProvider = ({
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, web3Provider],
+    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
   );
 
   const unstakeAllAndSync = useCallback(async () => {
@@ -376,7 +408,7 @@ export const StakingProvider = ({
     await unstakeAll(web3Provider, networkConfig);
     await sleep(2000);
     await syncConnectedAccount();
-  }, [chainId, web3Provider]);
+  }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
 
   const withdrawAndSync = useCallback(
     async (streamId: number) => {
@@ -394,7 +426,7 @@ export const StakingProvider = ({
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, web3Provider],
+    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
   );
 
   const withdrawAllAndSync = useCallback(async () => {
@@ -411,7 +443,7 @@ export const StakingProvider = ({
     await withdrawAll(web3Provider, networkConfig);
     await sleep(2000);
     await syncConnectedAccount();
-  }, [chainId, web3Provider]);
+  }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
 
   const claimAndSync = useCallback(
     async (streamId: number) => {
@@ -429,7 +461,7 @@ export const StakingProvider = ({
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, web3Provider],
+    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
   );
 
   const claimAllAndSync = useCallback(async () => {
@@ -446,7 +478,7 @@ export const StakingProvider = ({
     await claimAll(web3Provider, networkConfig);
     await sleep(2000);
     await syncConnectedAccount();
-  }, [chainId, web3Provider]);
+  }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
 
   const value = useMemo(
     () => ({
@@ -478,7 +510,35 @@ export const StakingProvider = ({
       claimAndSync,
       claimAllAndSync,
     }),
-    [],
+    [
+      accountSynced,
+      allowance,
+      approveAndSync,
+      auroraApr,
+      balance,
+      claimAllAndSync,
+      claimAndSync,
+      deposit,
+      isPaused,
+      pendingWithdrawals,
+      stakeAndSync,
+      stakedPct,
+      streams,
+      syncAllowance,
+      syncConnectedAccount,
+      totalApr,
+      unstakeAllAndSync,
+      unstakeAndSync,
+      userShares,
+      userSharesValue,
+      voteBalance,
+      votePowerPct,
+      voteSupply,
+      voteTotalBalance,
+      withdrawAllAndSync,
+      withdrawAndSync,
+      withdrawableVoteBalance,
+    ],
   );
 
   return (

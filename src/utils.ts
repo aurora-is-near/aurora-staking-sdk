@@ -2,6 +2,7 @@ import { BigNumber, ethers, providers } from 'ethers';
 import { stakingAbi } from './abis/staking';
 import { erc20abi } from './abis/erc20';
 import { AuroraNetworkConfig } from './types/network';
+import { logger } from './logger';
 
 export const getDeposit = async (
   account: string,
@@ -151,7 +152,7 @@ export const getStreamedAmounts = async (
 
     return latestStreamedAmounts;
   } catch (error) {
-    console.error('Zero staked shares?', error);
+    logger.error('Zero staked shares?', error);
 
     return streamIds.map(() => ethers.BigNumber.from(0));
   }
@@ -372,7 +373,7 @@ export const approveStaking = async (
     { gasPrice: 0 },
   );
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -389,7 +390,7 @@ export const stake = async (
 
   const tx = await staking.stake(amount, { gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -406,7 +407,7 @@ export const unstake = async (
 
   const tx = await staking.unstake(amount, { gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -422,7 +423,7 @@ export const unstakeAll = async (
 
   const tx = await staking.unstakeAll({ gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -439,7 +440,7 @@ export const withdraw = async (
 
   const tx = await staking.withdraw(streamId, { gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -455,7 +456,7 @@ export const withdrawAll = async (
 
   const tx = await staking.withdrawAll({ gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -472,7 +473,7 @@ export const claim = async (
 
   const tx = await staking.moveRewardsToPending(streamId, { gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };
 
@@ -488,6 +489,6 @@ export const claimAll = async (
 
   const tx = await staking.moveAllRewardsToPending({ gasPrice: 0 });
 
-  console.log(tx);
+  logger.debug(tx);
   await tx.wait();
 };

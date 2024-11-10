@@ -38,6 +38,7 @@ import { StakingContext } from './context';
 import { erc20abi } from './abis/erc20';
 import { AuroraNetwork } from './types/network';
 import { config } from './config';
+import { logger } from './logger';
 
 type StakingProviderProps = {
   isConnected: boolean;
@@ -221,7 +222,7 @@ export const StakingProvider = ({
 
       setAccountSynced(true);
     } catch (error) {
-      console.error(error, 'Failed to sync account');
+      logger.error(error, 'Failed to sync account');
     }
   }, [
     account,
@@ -323,7 +324,7 @@ export const StakingProvider = ({
 
   useEffect(() => {
     init().catch((error) => {
-      console.error(`Failed to initialize Staking Provider: ${error}`);
+      logger.error(`Failed to initialize Staking Provider: ${error}`);
     });
   }, [init]);
 

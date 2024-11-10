@@ -10,5 +10,25 @@ yarn add @aurora-is-near/staking
 
 ## Usage
 
-Wrap your application in a `StakingProvider`, then access the staking
-functionality via the `useStaking` hook.
+Wrap your application in a `StakingProvider`:
+
+```tsx
+import { StakingProvider } from '@aurora-is-near/staking';
+
+<StakingProvider
+  isConnected
+  network="mainnet"
+  getStreamPrices={() => ({
+    prices: [100, 200],
+    marketCaps: [1000, 2000],
+  })}
+>
+  {/** ... */}
+</StakingProvider>
+```
+
+The `getStreamPrices` function is responsible for taking a list of CoinGecko
+token names (as defined in the `config.ts`) and returning the USD prices and
+market caps for each.
+
+Staking functionality can be accessed via the `useStaking` hook.

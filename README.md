@@ -1,6 +1,6 @@
 # Aurora Staking SDK
 
-A TypeScript library that contains logic for staking and unstaking AURORA.
+A React library that contains logic for staking and unstaking AURORA.
 
 ## Installation
 

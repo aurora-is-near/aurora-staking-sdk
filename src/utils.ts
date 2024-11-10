@@ -14,7 +14,7 @@ export const getDeposit = async (
     provider,
   );
 
-  const deposit = await staking.getUserTotalDeposit(account);
+  const deposit: BigNumber = await staking.getUserTotalDeposit(account);
 
   return deposit;
 };
@@ -31,7 +31,7 @@ export const getUserShares = async (
     provider,
   );
 
-  const shares = await staking.getAmountOfShares(streamId, account);
+  const shares: BigNumber = await staking.getAmountOfShares(streamId, account);
 
   return shares;
 };
@@ -46,7 +46,7 @@ export const getTotalShares = async (
     provider,
   );
 
-  const shares = await staking.totalAuroraShares();
+  const shares: BigNumber = await staking.totalAuroraShares();
 
   return shares;
 };
@@ -61,7 +61,7 @@ export const getTotalStaked = async (
     provider,
   );
 
-  const totalStaked = await staking.getTotalAmountOfStakedAurora();
+  const totalStaked: BigNumber = await staking.getTotalAmountOfStakedAurora();
 
   return totalStaked;
 };
@@ -82,20 +82,46 @@ export const getPendingWithdrawals = async (
   );
 
   const pendingAmounts = await Promise.all(
-    streamIds.map((id) => staking.getPending(id, account)),
+    streamIds.map(async (id) => {
+      const pending: BigNumber = await staking.getPending(id, account);
+
+      return pending;
+    }),
   );
 
   const pendingReleaseTimes = await Promise.all(
-    streamIds.map((id) => staking.getReleaseTime(id, account)),
+    streamIds.map(async (id) => {
+      const releaseTime: BigNumber = staking.getReleaseTime(id, account);
+
+      return releaseTime;
+    }),
   );
 
   const pendingWithdrawals = pendingAmounts
-    .map((amount, i) => ({
-      amount,
-      releaseTime: pendingReleaseTimes[i].toNumber() * 1000,
-      id: streamIds[i],
-      decimals: streamDecimals[i],
-    }))
+    .map((amount, i) => {
+      const releaseTime = pendingReleaseTimes[i];
+      const id = streamIds[i];
+      const decimals = streamDecimals[i];
+
+      if (!releaseTime) {
+        throw new Error(`Release time at position ${i} not found`);
+      }
+
+      if (!id) {
+        throw new Error(`Stream ID at position ${i} not found`);
+      }
+
+      if (!decimals) {
+        throw new Error(`Stream decimals at position ${i} not found`);
+      }
+
+      return {
+        amount,
+        releaseTime: releaseTime.toNumber() * 1000,
+        id,
+        decimals,
+      };
+    })
     .filter((withdrawal) => !withdrawal.amount.isZero());
 
   return pendingWithdrawals;
@@ -115,7 +141,12 @@ export const getStreamedAmounts = async (
 
   try {
     const latestStreamedAmounts = await Promise.all(
-      streamIds.map((id) => staking.getStreamClaimableAmount(id, account)),
+      streamIds.map(async (id) => {
+        const claimableAmount: BigNumber =
+          await staking.getStreamClaimableAmount(id, account);
+
+        return claimableAmount;
+      }),
     );
 
     return latestStreamedAmounts;
@@ -143,25 +174,57 @@ export const getStreamsSchedule = async (
   );
 
   const streamsSchedule = await Promise.all(
-    streamIds.map((id) => staking.getStreamSchedule(id)),
+    streamIds.map(async (id) => {
+      const schedule: BigNumber[][] = staking.getStreamSchedule(id);
+
+      return schedule;
+    }),
   );
 
-  return streamsSchedule.map((schedule) => ({
-    scheduleTimes: schedule[0],
-    scheduleRewards: schedule[1],
-  }));
+  return streamsSchedule.map((schedule) => {
+    const [scheduleTimes, scheduleRewards] = schedule;
+
+    if (!scheduleTimes || !scheduleRewards) {
+      throw new Error('Invalid schedule found');
+    }
+
+    return {
+      scheduleTimes,
+      scheduleRewards,
+    };
+  });
+};
+
+const getScheduleStartAndEndTimes = (schedule: StreamSchedule) => {
+  const startTime = schedule.scheduleTimes[0];
+  const endTime = schedule.scheduleTimes[schedule.scheduleTimes.length - 1];
+
+  if (!startTime) {
+    throw new Error('Invalid schedule: start time not found');
+  }
+
+  if (!endTime) {
+    throw new Error('Invalid schedule: end time not found');
+  }
+
+  const startNumber = startTime.toNumber();
+  const endNumber = endTime.toNumber();
+
+  return {
+    startNumber,
+    endNumber,
+    startTime: startNumber * 1000,
+    endTime: endNumber * 1000,
+  };
 };
 
 export const getStreamsProgress = (
   streamsSchedule: StreamSchedule[],
 ): number[] => {
   const streamsProgress = streamsSchedule.map((schedule) => {
-    const start = schedule.scheduleTimes[0].toNumber() * 1000;
-    const end =
-      schedule.scheduleTimes[schedule.scheduleTimes.length - 1].toNumber() *
-      1000;
+    const { startTime, endTime } = getScheduleStartAndEndTimes(schedule);
 
-    const progress = ((Date.now() - start) / (end - start)) * 100;
+    const progress = ((Date.now() - startTime) / (endTime - startTime)) * 100;
 
     return progress > 10 ? progress : 10;
   });
@@ -170,16 +233,12 @@ export const getStreamsProgress = (
 };
 
 export const getVoteSupply = (voteSchedule: StreamSchedule): BigNumber => {
-  const start = voteSchedule.scheduleTimes[0].toNumber() * 1000;
-  const end =
-    voteSchedule.scheduleTimes[
-      voteSchedule.scheduleTimes.length - 1
-    ].toNumber() * 1000;
+  const { startTime, endTime } = getScheduleStartAndEndTimes(voteSchedule);
 
   const totalSupply = voteSchedule.scheduleRewards[0];
   const circulatingSupply = totalSupply
-    .mul(Date.now() - start)
-    .div(end - start);
+    ? totalSupply.mul(Date.now() - startTime).div(endTime - startTime)
+    : ethers.BigNumber.from(0);
 
   return circulatingSupply;
 };
@@ -190,15 +249,13 @@ export const getOneDayRewards = (
   const now = Math.floor(Date.now() / 1000);
   const oneDay = 86400;
   const rewards = streamsSchedule.map((schedule) => {
-    const streamStart = schedule.scheduleTimes[0].toNumber();
-    const streamEnd =
-      schedule.scheduleTimes[schedule.scheduleTimes.length - 1].toNumber();
+    const { startNumber, endNumber } = getScheduleStartAndEndTimes(schedule);
 
-    if (now <= streamStart) {
+    if (now <= startNumber) {
       return ethers.BigNumber.from(0);
     } // didn't start
 
-    if (now >= streamEnd - oneDay) {
+    if (now >= endNumber - oneDay) {
       return ethers.BigNumber.from(0);
     } // ended
 
@@ -207,15 +264,20 @@ export const getOneDayRewards = (
         (indexTime) => now < indexTime.toNumber(),
       ) - 1;
 
-    const indexDuration = schedule.scheduleTimes[currentIndex + 1].sub(
-      schedule.scheduleTimes[currentIndex],
-    );
+    const currentNumber = schedule.scheduleTimes[currentIndex];
+    const nextNumber = schedule.scheduleRewards[currentIndex + 1];
 
-    const indexRewards = schedule.scheduleRewards[currentIndex].sub(
-      schedule.scheduleRewards[currentIndex + 1],
-    );
+    const indexDuration =
+      currentNumber && nextNumber
+        ? nextNumber.sub(currentNumber)
+        : ethers.BigNumber.from(0);
 
-    const reward = indexRewards.mul(oneDay).div(indexDuration);
+    const indexRewards =
+      currentNumber && nextNumber
+        ? currentNumber.sub(nextNumber)
+        : ethers.BigNumber.from(0);
+
+    const reward = indexRewards?.mul(oneDay).div(indexDuration);
 
     return reward;
   });
@@ -230,22 +292,40 @@ export const calculateAprs = (
   totalStaked: BigNumber,
 ): { total: number; streams: number[]; aurora: number } => {
   const oneDayRewards = getOneDayRewards(streamsSchedule);
+  const [auroraPrice] = streamPrices;
+
+  if (!auroraPrice) {
+    throw new Error('Aurora price not found');
+  }
+
   const stakedValue =
     Number(ethers.utils.formatUnits(totalStaked, streamDecimals[0])) *
-    streamPrices[0];
+    auroraPrice;
 
-  const rewardValues = oneDayRewards.map(
-    (reward, i) =>
+  const rewardValues = oneDayRewards.map((reward, i) => {
+    const streamPrice = streamPrices[i];
+
+    if (!streamPrice) {
+      throw new Error(`Stream price at position ${i} not found`);
+    }
+
+    return (
       Number(ethers.utils.formatUnits(reward, streamDecimals[i])) *
       365 *
-      streamPrices[i],
-  );
+      streamPrice
+    );
+  });
 
   const cumulatedReward = rewardValues.reduce((r1, r2) => r1 + r2);
   const total = (cumulatedReward * 100) / stakedValue;
   const streams = rewardValues.map((reward) => (reward * 100) / stakedValue);
+  const aurora = streams[0];
 
-  return { total, streams: streams.slice(1), aurora: streams[0] };
+  if (!aurora) {
+    throw new Error('Aurora stream not found');
+  }
+
+  return { total, streams: streams.slice(1), aurora };
 };
 
 export const calculateStakedPctOfSupply = (

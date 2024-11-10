@@ -31,7 +31,7 @@ import {
   withdrawAll,
 } from './utils';
 import { sleep } from './sleep';
-import useWeb3Provider from './hooks/useWeb3Provider';
+import { useWeb3Provider } from './hooks/useWeb3Provider';
 import { Stream } from './types/stream';
 import { Withdrawal } from './types/withdrawal';
 import { StakingContext } from './context';

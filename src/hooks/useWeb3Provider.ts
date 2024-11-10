@@ -2,12 +2,12 @@ import { useMemo } from 'react';
 import { providers } from 'ethers';
 import { useWalletClient } from 'wagmi';
 
-export default function useWeb3Provider() {
+export const useWeb3Provider = () => {
   const { data: walletClient } = useWalletClient();
 
   return useMemo(() => {
     if (!walletClient) {
-      return walletClient;
+      return null;
     }
 
     const { chain, transport } = walletClient;
@@ -20,4 +20,4 @@ export default function useWeb3Provider() {
 
     return web3Provider;
   }, [walletClient]);
-}
+};

@@ -41,7 +41,6 @@ import { config } from './config';
 import { logger } from './logger';
 
 type StakingProviderProps = {
-  isConnected: boolean;
   network: AuroraNetwork;
   children: ReactNode;
   getStreamPrices: (streamNames: string[]) => Promise<{
@@ -51,7 +50,6 @@ type StakingProviderProps = {
 };
 
 export const StakingProvider = ({
-  isConnected,
   network,
   children,
   getStreamPrices,
@@ -113,7 +111,7 @@ export const StakingProvider = ({
   const [totalApr, setTotalApr] = useState(0);
   const [auroraApr, setAuroraApr] = useState(0);
   const [stakedPct, setStakedPct] = useState(0);
-  const { address: account } = useAccount();
+  const { isConnected, address: account } = useAccount();
   const web3Provider = useWeb3Provider();
   const { switchChain } = useSwitchChain();
   const chainId = useChainId();

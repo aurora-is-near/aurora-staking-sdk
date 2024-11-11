@@ -16,7 +16,6 @@ Wrap your application in a `StakingProvider`:
 import { StakingProvider } from '@aurora-is-near/staking';
 
 <StakingProvider
-  isConnected
   network="mainnet"
   getStreamPrices={() => ({
     prices: [100, 200],

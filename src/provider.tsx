@@ -30,8 +30,8 @@ import {
   unstakeAll,
   withdraw,
   withdrawAll,
-} from './utils';
-import { sleep } from './sleep';
+} from './utils/staking';
+import { sleep } from './utils/sleep';
 import { useWeb3Provider } from './hooks/useWeb3Provider';
 import { Stream } from './types/stream';
 import { Withdrawal } from './types/withdrawal';

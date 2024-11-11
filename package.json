@@ -1,6 +1,6 @@
 {
   "name": "@aurora-is-near/staking",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Contains logic for staking and unstaking Aurora",
   "main": "dist/index.js",
   "author": "Alex Mendes",

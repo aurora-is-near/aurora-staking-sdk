@@ -10,7 +10,7 @@ type CoingeckoToken =
 
 export type Stream = {
   address: string;
-  amount?: BigNumber;
+  amount: BigNumber;
   coingeckoName: CoingeckoToken;
   decimals: number;
   id: number;

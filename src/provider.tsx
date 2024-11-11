@@ -208,11 +208,19 @@ export const StakingProvider = ({
       setPendingWithdrawals(newPendingWithdrawals);
       setIsPaused(newIsPaused);
       setStreams((previousStreams) =>
-        previousStreams.map((stream, i) => ({
-          ...stream,
-          amount: streamedAmounts[i],
-          price: streamPrices.prices[i + 1],
-        })),
+        previousStreams.map((stream, i) => {
+          const amount = streamedAmounts[i];
+
+          if (!amount) {
+            logger.error(`Failed to get amount for stream ${i}, setting to 0`);
+          }
+
+          return {
+            ...stream,
+            amount: amount ?? ethers.BigNumber.from(0),
+            price: streamPrices.prices[i + 1],
+          };
+        }),
       );
 
       if (!totalShares.isZero()) {

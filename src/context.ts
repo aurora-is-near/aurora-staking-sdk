@@ -21,6 +21,7 @@ export type StakingContextType = {
   totalApr: number;
   isPaused: boolean;
   stakedPct: number;
+  hasPendingRewards: boolean;
   syncConnectedAccount: () => void;
   syncAllowance: () => void;
   approveAndSync: () => void;

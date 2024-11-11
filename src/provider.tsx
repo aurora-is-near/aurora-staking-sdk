@@ -8,6 +8,7 @@ import {
 } from 'react';
 import { BigNumber, ethers } from 'ethers';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
+import { parseFixed } from '@ethersproject/bignumber';
 import {
   approveStaking,
   calculateAprs,
@@ -480,6 +481,10 @@ export const StakingProvider = ({
     await syncConnectedAccount();
   }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
 
+  const hasPendingRewards = streams.some(({ amount, decimals }) =>
+    amount?.gt(parseFixed('0.0001', decimals)),
+  );
+
   const value = useMemo(
     () => ({
       accountSynced,
@@ -499,6 +504,7 @@ export const StakingProvider = ({
       totalApr,
       isPaused,
       stakedPct,
+      hasPendingRewards,
       syncConnectedAccount,
       syncAllowance,
       approveAndSync,
@@ -538,6 +544,7 @@ export const StakingProvider = ({
       withdrawAllAndSync,
       withdrawAndSync,
       withdrawableVoteBalance,
+      hasPendingRewards,
     ],
   );
 

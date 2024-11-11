@@ -21,6 +21,10 @@
       "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
     }
   },
+  "files": [
+    "src",
+    "dist"
+  ],
   "peerDependencies": {
     "react": "*"
   },

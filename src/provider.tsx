@@ -291,7 +291,7 @@ export const StakingProvider = ({
         return {
           ...stream,
           apr: aprs.streams[i],
-          percentage: streamsProgress[i + 1],
+          percentage: streamsProgress[i + 1] ?? 0,
           startTimestamp: firstScheduleTime
             ? firstScheduleTime.toNumber() * 1000
             : 0,

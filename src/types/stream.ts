@@ -14,7 +14,7 @@ export type Stream = {
   coingeckoName: CoingeckoToken;
   decimals: number;
   id: number;
-  percentage?: number;
+  percentage: number;
   symbol: string;
   name: string;
   price?: number;

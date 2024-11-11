@@ -37,6 +37,8 @@ jobs:
         run: echo "//npm.pkg.github.com/:_authToken=${{ secrets.GITHUB_TOKEN }}" >> .npmrc
       - name: Install
         run: yarn install --frozen-lockfile --non-interactive
+      - name: Build
+        run: yarn build
       - name: Release
         run: npx semantic-release
         env:

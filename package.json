@@ -29,6 +29,7 @@
     "src",
     "dist"
   ],
+  "sideEffects": false,
   "peerDependencies": {
     "react": "*"
   },

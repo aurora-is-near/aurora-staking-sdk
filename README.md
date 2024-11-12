@@ -2,6 +2,10 @@
 
 A React library that contains logic for staking and unstaking AURORA.
 
+This repository enforces semantic commit messages. For more details and examples
+see the
+[Conventional Commits Specification](https://www.conventionalcommits.org).
+
 ## Installation
 
 ```sh

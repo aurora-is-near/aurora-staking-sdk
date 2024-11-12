@@ -2,16 +2,20 @@
   "name": "@aurora-is-near/staking",
   "version": "1.4.0",
   "description": "Contains logic for staking and unstaking Aurora",
-  "main": "dist/index.js",
   "author": "Alex Mendes",
   "license": "UNLICENSED",
+  "main": "dist/cjs/index.js",
+  "module": "dist/esm/index.js",
+  "types": "dist/esm/index.d.ts",
   "scripts": {
     "lint": "eslint . --ext .js,.ts",
     "test": "jest",
     "typecheck": "tsc --noEmit",
     "clean": "rimraf dist",
     "prebuild": "yarn clean",
-    "build": "tsc"
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs",
+    "build:esm": "tsc --module esnext --outDir dist/esm",
+    "build": "yarn build:cjs && yarn build:esm"
   },
   "engines": {
     "node": ">=20.9.0"

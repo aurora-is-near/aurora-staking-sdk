@@ -1,5 +1,5 @@
 import { ethers } from 'ethers';
-import { AuroraNetwork, AuroraNetworkConfig } from './types/network';
+import { type AuroraNetwork, AuroraNetworkConfig } from './types/network.js';
 
 export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
   testnet: {

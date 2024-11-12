@@ -1,6 +1,6 @@
-export { useStaking } from './hooks/useStaking';
-export { StakingProvider } from './provider';
-export { type StakingContextType } from './context';
-export { stakingAbi } from './abis/staking';
-export { config as stakingConfig } from './config';
-export { hasShares } from './utils/shares';
+export { useStaking } from './hooks/useStaking.js';
+export { StakingProvider } from './provider.js';
+export { type StakingContextType } from './context.js';
+export { stakingAbi } from './abis/staking.js';
+export { config as stakingConfig } from './config.js';
+export { hasShares } from './utils/shares.js';

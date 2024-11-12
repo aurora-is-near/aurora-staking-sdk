@@ -1,8 +1,8 @@
 import { BigNumber, ethers, providers } from 'ethers';
-import { stakingAbi } from '../abis/staking';
-import { erc20abi } from '../abis/erc20';
-import { AuroraNetworkConfig } from '../types/network';
-import { logger } from '../logger';
+import { stakingAbi } from '../abis/staking.js';
+import { erc20abi } from '../abis/erc20.js';
+import { type AuroraNetworkConfig } from '../types/network.js';
+import { logger } from '../logger.js';
 
 export const getDeposit = async (
   account: string,

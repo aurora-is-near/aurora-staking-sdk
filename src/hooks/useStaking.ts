@@ -1,5 +1,5 @@
 import { useContext } from 'react';
-import { StakingContext } from '../context';
+import { StakingContext } from '../context.js';
 
 export const useStaking = () => {
   const ctx = useContext(StakingContext);

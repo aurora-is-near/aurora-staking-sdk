@@ -1,4 +1,4 @@
-import { Stream, VoteStream } from './stream';
+import { type Stream, VoteStream } from './stream.js';
 
 export type AuroraNetwork = 'testnet' | 'mainnet';
 

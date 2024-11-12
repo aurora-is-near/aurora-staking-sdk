@@ -30,16 +30,16 @@ import {
   unstakeAll,
   withdraw,
   withdrawAll,
-} from './utils/staking';
-import { sleep } from './utils/sleep';
-import { useWeb3Provider } from './hooks/useWeb3Provider';
-import { Stream } from './types/stream';
-import { Withdrawal } from './types/withdrawal';
-import { StakingContext } from './context';
-import { erc20abi } from './abis/erc20';
-import { AuroraNetwork } from './types/network';
-import { config } from './config';
-import { logger } from './logger';
+} from './utils/staking.js';
+import { sleep } from './utils/sleep.js';
+import { useWeb3Provider } from './hooks/useWeb3Provider.js';
+import { Stream } from './types/stream.js';
+import { Withdrawal } from './types/withdrawal.js';
+import { StakingContext } from './context.js';
+import { erc20abi } from './abis/erc20.js';
+import { AuroraNetwork } from './types/network.js';
+import { config } from './config.js';
+import { logger } from './logger.js';
 
 type StakingProviderProps = {
   network: AuroraNetwork;

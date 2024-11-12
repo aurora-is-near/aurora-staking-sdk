@@ -1,7 +1,7 @@
 import { BigNumber } from 'ethers';
 import { createContext } from 'react';
-import { Withdrawal } from './types/withdrawal';
-import { Stream } from './types/stream';
+import { type Withdrawal } from './types/withdrawal.js';
+import { Stream } from './types/stream.js';
 
 export type StakingContextType = {
   accountSynced: boolean;

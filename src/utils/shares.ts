@@ -1,7 +1,7 @@
 import { providers } from 'ethers';
-import { AuroraNetwork } from '../types/network';
-import { config } from '../config';
-import { getUserShares } from './staking';
+import { type AuroraNetwork } from '../types/network.js';
+import { config } from '../config.js';
+import { getUserShares } from './staking.js';
 
 /**
  * Confirm that a user's account has shares.

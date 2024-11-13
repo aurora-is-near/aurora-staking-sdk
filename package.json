@@ -1,6 +1,6 @@
 {
   "name": "@aurora-is-near/staking",
-  "version": "1.6.2",
+  "version": "1.6.3",
   "description": "Contains logic for staking and unstaking Aurora",
   "author": "Alex Mendes",
   "license": "UNLICENSED",

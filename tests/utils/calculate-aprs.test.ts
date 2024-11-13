@@ -1,5 +1,5 @@
 import { BigNumber } from 'ethers';
-import { calculateAprs } from '../../src/utils/calculate-aprs';
+import { calculateAprs } from '../../src/utils/apr';
 
 jest.useFakeTimers();
 

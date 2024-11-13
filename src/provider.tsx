@@ -30,7 +30,7 @@ import {
   withdraw,
   withdrawAll,
 } from './utils/staking.js';
-import { calculateAprs } from './utils/calculate-aprs.js';
+import { calculateAprs } from './utils/apr.js';
 import { sleep } from './utils/sleep.js';
 import { useWeb3Provider } from './hooks/useWeb3Provider.js';
 import { Stream } from './types/stream.js';

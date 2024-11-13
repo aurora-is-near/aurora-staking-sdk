@@ -1,7 +1,13 @@
+// jest.config.js
+const { createDefaultEsmPreset } = require('ts-jest');
+
+const defaultEsmPreset = createDefaultEsmPreset();
+
+/** @type {import('ts-jest').JestConfigWithTsJest} */
 module.exports = {
-  reporters: ['default', 'github-actions'],
-  clearMocks: true,
-  preset: 'ts-jest/presets/js-with-babel',
-  testPathIgnorePatterns: ['/dist/', '/node_modules/'],
-  modulePathIgnorePatterns: ['/dist/'],
+  // [...]
+  ...defaultEsmPreset,
+  moduleNameMapper: {
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+  },
 };

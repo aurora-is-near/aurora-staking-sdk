@@ -265,12 +265,12 @@ export const StakingProvider = ({
       fetchStreamPrices(),
     ]);
 
-    const aprs = calculateAprs(
+    const aprs = calculateAprs({
       streamsSchedule,
       streamDecimals,
-      streamPrices.prices,
+      streamPrices: streamPrices.prices,
       totalStaked,
-    );
+    });
 
     const streamsProgress = getStreamsProgress(streamsSchedule);
 

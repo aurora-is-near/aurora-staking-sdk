@@ -3,6 +3,7 @@ import { stakingAbi } from '../abis/staking.js';
 import { erc20abi } from '../abis/erc20.js';
 import { type AuroraNetworkConfig } from '../types/network.js';
 import { logger } from '../logger.js';
+import { isDefined } from './is-defined.js';
 
 export const getDeposit = async (
   account: string,
@@ -104,16 +105,16 @@ export const getPendingWithdrawals = async (
       const id = streamIds[i];
       const decimals = streamDecimals[i];
 
-      if (!releaseTime) {
-        throw new Error(`Release time at position ${i} not found`);
+      if (!isDefined(releaseTime)) {
+        throw new Error(`No release time at position ${i}`);
       }
 
-      if (!id) {
-        throw new Error(`Stream ID at position ${i} not found`);
+      if (!isDefined(id)) {
+        throw new Error(`No stream ID at position ${i}`);
       }
 
-      if (!decimals) {
-        throw new Error(`Stream decimals at position ${i} not found`);
+      if (!isDefined(decimals)) {
+        throw new Error(`No stream decimals at position ${i}`);
       }
 
       return {
@@ -123,6 +124,7 @@ export const getPendingWithdrawals = async (
         decimals,
       };
     })
+    .filter((withdrawal) => !!withdrawal)
     .filter((withdrawal) => !withdrawal.amount.isZero());
 
   return pendingWithdrawals;
@@ -185,7 +187,7 @@ export const getStreamsSchedule = async (
   return streamsSchedule.map((schedule) => {
     const [scheduleTimes, scheduleRewards] = schedule;
 
-    if (!scheduleTimes || !scheduleRewards) {
+    if (!isDefined(scheduleTimes) || !isDefined(scheduleRewards)) {
       throw new Error('Invalid schedule found');
     }
 
@@ -200,22 +202,17 @@ const getScheduleStartAndEndTimes = (schedule: StreamSchedule) => {
   const startTime = schedule.scheduleTimes[0];
   const endTime = schedule.scheduleTimes[schedule.scheduleTimes.length - 1];
 
-  if (!startTime) {
+  if (!isDefined(startTime)) {
     throw new Error('Invalid schedule: start time not found');
   }
 
-  if (!endTime) {
+  if (!isDefined(endTime)) {
     throw new Error('Invalid schedule: end time not found');
   }
 
-  const startNumber = startTime.toNumber();
-  const endNumber = endTime.toNumber();
-
   return {
-    startNumber,
-    endNumber,
-    startTime: startNumber * 1000,
-    endTime: endNumber * 1000,
+    startTime: startTime.toNumber() * 1000,
+    endTime: endTime.toNumber() * 1000,
   };
 };
 
@@ -247,38 +244,43 @@ export const getVoteSupply = (voteSchedule: StreamSchedule): BigNumber => {
 export const getOneDayRewards = (
   streamsSchedule: StreamSchedule[],
 ): BigNumber[] => {
-  const now = Math.floor(Date.now() / 1000);
+  const now = Date.now();
   const oneDay = 86400;
   const rewards = streamsSchedule.map((schedule) => {
-    const { startNumber, endNumber } = getScheduleStartAndEndTimes(schedule);
+    const { startTime, endTime } = getScheduleStartAndEndTimes(schedule);
 
-    if (now <= startNumber) {
+    if (now <= startTime) {
       return ethers.BigNumber.from(0);
     } // didn't start
 
-    if (now >= endNumber - oneDay) {
+    if (now >= endTime - oneDay) {
       return ethers.BigNumber.from(0);
     } // ended
 
     const currentIndex =
       schedule.scheduleTimes.findIndex(
-        (indexTime) => now < indexTime.toNumber(),
+        (indexTime) => Math.floor(now / 1000) < indexTime.toNumber(),
       ) - 1;
 
-    const currentNumber = schedule.scheduleTimes[currentIndex];
-    const nextNumber = schedule.scheduleRewards[currentIndex + 1];
+    const currentTime = schedule.scheduleTimes[currentIndex];
+    const nextTime = schedule.scheduleTimes[currentIndex + 1];
 
-    const indexDuration =
-      currentNumber && nextNumber
-        ? nextNumber.sub(currentNumber)
-        : ethers.BigNumber.from(0);
+    if (!currentTime || !nextTime) {
+      return ethers.BigNumber.from(0);
+    }
 
-    const indexRewards =
-      currentNumber && nextNumber
-        ? currentNumber.sub(nextNumber)
-        : ethers.BigNumber.from(0);
+    const indexDuration = nextTime.sub(currentTime);
 
-    const reward = indexRewards?.mul(oneDay).div(indexDuration);
+    const currentReward = schedule.scheduleRewards[currentIndex];
+    const nextReward = schedule.scheduleRewards[currentIndex + 1];
+
+    if (!currentReward || !nextReward) {
+      return ethers.BigNumber.from(0);
+    }
+
+    const indexRewards = currentReward.sub(nextReward);
+
+    const reward = indexRewards.mul(oneDay).div(indexDuration);
 
     return reward;
   });
@@ -286,18 +288,19 @@ export const getOneDayRewards = (
   return rewards;
 };
 
-export const calculateAprs = (
-  streamsSchedule: StreamSchedule[],
-  streamDecimals: number[],
-  streamPrices: number[],
-  totalStaked: BigNumber,
-): { total: number; streams: number[]; aurora: number } => {
+export const calculateAprs = ({
+  streamsSchedule,
+  streamDecimals,
+  streamPrices,
+  totalStaked,
+}: {
+  streamsSchedule: StreamSchedule[];
+  streamDecimals: number[];
+  streamPrices: number[];
+  totalStaked: BigNumber;
+}): { total: number; streams: number[]; aurora: number } => {
   const oneDayRewards = getOneDayRewards(streamsSchedule);
-  const [auroraPrice] = streamPrices;
-
-  if (!auroraPrice) {
-    throw new Error('Aurora price not found');
-  }
+  const [auroraPrice = 0] = streamPrices;
 
   const stakedValue =
     Number(ethers.utils.formatUnits(totalStaked, streamDecimals[0])) *
@@ -306,8 +309,8 @@ export const calculateAprs = (
   const rewardValues = oneDayRewards.map((reward, i) => {
     const streamPrice = streamPrices[i];
 
-    if (!streamPrice) {
-      throw new Error(`Stream price at position ${i} not found`);
+    if (!isDefined(streamPrice)) {
+      throw new Error(`No stream price at position ${i}`);
     }
 
     return (
@@ -322,8 +325,8 @@ export const calculateAprs = (
   const streams = rewardValues.map((reward) => (reward * 100) / stakedValue);
   const aurora = streams[0];
 
-  if (!aurora) {
-    throw new Error('Aurora stream not found');
+  if (!isDefined(aurora)) {
+    throw new Error('No stream at position 0');
   }
 
   return { total, streams: streams.slice(1), aurora };

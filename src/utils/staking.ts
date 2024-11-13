@@ -1,6 +1,6 @@
 import { BigNumber, ethers, providers } from 'ethers';
+import { erc20Abi } from 'abitype/abis';
 import { stakingAbi } from '../abis/staking.js';
-import { erc20abi } from '../abis/erc20.js';
 import { type AuroraNetworkConfig } from '../types/network.js';
 import { logger } from '../logger.js';
 import { isDefined } from './is-defined.js';
@@ -254,7 +254,7 @@ export const approveStaking = async (
 ) => {
   const auroraToken = new ethers.Contract(
     networkConfig.tokenContractAddress,
-    erc20abi,
+    erc20Abi,
     provider.getSigner(),
   );
 

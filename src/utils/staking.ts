@@ -4,6 +4,7 @@ import { erc20abi } from '../abis/erc20.js';
 import { type AuroraNetworkConfig } from '../types/network.js';
 import { logger } from '../logger.js';
 import { isDefined } from './is-defined.js';
+import { StreamSchedule } from '../types/stream.js';
 
 export const getDeposit = async (
   account: string,
@@ -160,11 +161,6 @@ export const getStreamedAmounts = async (
   }
 };
 
-interface StreamSchedule {
-  scheduleTimes: BigNumber[];
-  scheduleRewards: BigNumber[];
-}
-
 export const getStreamsSchedule = async (
   streamIds: number[],
   provider: providers.JsonRpcProvider,
@@ -239,97 +235,6 @@ export const getVoteSupply = (voteSchedule: StreamSchedule): BigNumber => {
     : ethers.BigNumber.from(0);
 
   return circulatingSupply;
-};
-
-export const getOneDayRewards = (
-  streamsSchedule: StreamSchedule[],
-): BigNumber[] => {
-  const now = Date.now();
-  const oneDay = 86400;
-  const rewards = streamsSchedule.map((schedule) => {
-    const { startTime, endTime } = getScheduleStartAndEndTimes(schedule);
-
-    if (now <= startTime) {
-      return ethers.BigNumber.from(0);
-    } // didn't start
-
-    if (now >= endTime - oneDay) {
-      return ethers.BigNumber.from(0);
-    } // ended
-
-    const currentIndex =
-      schedule.scheduleTimes.findIndex(
-        (indexTime) => Math.floor(now / 1000) < indexTime.toNumber(),
-      ) - 1;
-
-    const currentTime = schedule.scheduleTimes[currentIndex];
-    const nextTime = schedule.scheduleTimes[currentIndex + 1];
-
-    if (!currentTime || !nextTime) {
-      return ethers.BigNumber.from(0);
-    }
-
-    const indexDuration = nextTime.sub(currentTime);
-
-    const currentReward = schedule.scheduleRewards[currentIndex];
-    const nextReward = schedule.scheduleRewards[currentIndex + 1];
-
-    if (!currentReward || !nextReward) {
-      return ethers.BigNumber.from(0);
-    }
-
-    const indexRewards = currentReward.sub(nextReward);
-
-    const reward = indexRewards.mul(oneDay).div(indexDuration);
-
-    return reward;
-  });
-
-  return rewards;
-};
-
-export const calculateAprs = ({
-  streamsSchedule,
-  streamDecimals,
-  streamPrices,
-  totalStaked,
-}: {
-  streamsSchedule: StreamSchedule[];
-  streamDecimals: number[];
-  streamPrices: number[];
-  totalStaked: BigNumber;
-}): { total: number; streams: number[]; aurora: number } => {
-  const oneDayRewards = getOneDayRewards(streamsSchedule);
-  const [auroraPrice = 0] = streamPrices;
-
-  const stakedValue =
-    Number(ethers.utils.formatUnits(totalStaked, streamDecimals[0])) *
-    auroraPrice;
-
-  const rewardValues = oneDayRewards.map((reward, i) => {
-    const streamPrice = streamPrices[i];
-
-    if (!isDefined(streamPrice)) {
-      throw new Error(`No stream price at position ${i}`);
-    }
-
-    return (
-      Number(ethers.utils.formatUnits(reward, streamDecimals[i])) *
-      365 *
-      streamPrice
-    );
-  });
-
-  const cumulatedReward = rewardValues.reduce((r1, r2) => r1 + r2);
-  const total = (cumulatedReward * 100) / stakedValue;
-  const streams = rewardValues.map((reward) => (reward * 100) / stakedValue);
-  const aurora = streams[0];
-
-  if (!isDefined(aurora)) {
-    throw new Error('No stream at position 0');
-  }
-
-  return { total, streams: streams.slice(1), aurora };
 };
 
 export const calculateStakedPctOfSupply = (

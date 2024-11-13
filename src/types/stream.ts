@@ -27,3 +27,8 @@ export type Stream = {
 export type VoteStream = Omit<Stream, 'symbol'> & {
   symbol: 'VOTE';
 };
+
+export type StreamSchedule = {
+  scheduleTimes: BigNumber[];
+  scheduleRewards: BigNumber[];
+};

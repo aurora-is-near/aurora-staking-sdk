@@ -10,11 +10,11 @@ const getOneDayRewards = (streamsSchedule: StreamSchedule[]): BigNumber[] => {
     const { startTime, endTime } = getScheduleStartAndEndTimes(schedule);
 
     if (now <= startTime) {
-      return BigNumber.from(0);
+      return 0n;
     } // didn't start
 
     if (now >= endTime - oneDay) {
-      return BigNumber.from(0);
+      return 0n;
     } // ended
 
     const currentIndex =
@@ -26,7 +26,7 @@ const getOneDayRewards = (streamsSchedule: StreamSchedule[]): BigNumber[] => {
     const nextTime = schedule.scheduleTimes[currentIndex + 1];
 
     if (!currentTime || !nextTime) {
-      return BigNumber.from(0);
+      return 0n;
     }
 
     const indexDuration = nextTime.sub(currentTime);
@@ -35,7 +35,7 @@ const getOneDayRewards = (streamsSchedule: StreamSchedule[]): BigNumber[] => {
     const nextReward = schedule.scheduleRewards[currentIndex + 1];
 
     if (!currentReward || !nextReward) {
-      return BigNumber.from(0);
+      return 0n;
     }
 
     const indexRewards = currentReward.sub(nextReward);

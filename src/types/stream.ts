@@ -1,5 +1,3 @@
-import { BigNumber } from 'ethers';
-
 type CoingeckoToken =
   | 'aurora-near'
   | 'aurigami'
@@ -10,7 +8,7 @@ type CoingeckoToken =
 
 export type Stream = {
   address: string;
-  amount: BigNumber;
+  amount: bigint;
   coingeckoName: CoingeckoToken;
   decimals: number;
   id: number;
@@ -29,6 +27,6 @@ export type VoteStream = Omit<Stream, 'symbol'> & {
 };
 
 export type StreamSchedule = {
-  scheduleTimes: BigNumber[];
-  scheduleRewards: BigNumber[];
+  scheduleTimes: bigint[];
+  scheduleRewards: bigint[];
 };

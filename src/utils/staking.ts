@@ -1,104 +1,69 @@
-import { BigNumber, ethers, providers } from 'ethers';
-import { erc20Abi } from 'abitype/abis';
+import { ethers, JsonRpcProvider } from 'ethers';
 import { stakingAbi } from '../abis/staking.js';
-import { type AuroraNetworkConfig } from '../types/network.js';
+import { type AuroraNetwork } from '../types/network.js';
 import { logger } from '../logger.js';
 import { isDefined } from './is-defined.js';
 import { StreamSchedule } from '../types/stream.js';
 import { getScheduleStartAndEndTimes } from './schedule.js';
+import { getStakingContract } from '../contracts.js';
+import { erc20Abi } from '../abis/erc20.js';
 
 export const getDeposit = async (
   account: string,
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
-): Promise<BigNumber> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
+): Promise<bigint> => {
+  const contract = getStakingContract(network, provider);
 
-  const deposit: BigNumber = await staking.getUserTotalDeposit(account);
-
-  return deposit;
+  return contract.getUserTotalDeposit(account);
 };
 
 export const getUserShares = async (
   account: string,
   streamId: number,
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
-): Promise<BigNumber> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
+): Promise<bigint> => {
+  const contract = getStakingContract(network, provider);
 
-  const shares: BigNumber = await staking.getAmountOfShares(streamId, account);
-
-  return shares;
+  return contract.getAmountOfShares(streamId, account);
 };
 
 export const getTotalShares = async (
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
-): Promise<BigNumber> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
+): Promise<bigint> => {
+  const contract = getStakingContract(network, provider);
 
-  const shares: BigNumber = await staking.totalAuroraShares();
-
-  return shares;
+  return contract.totalAuroraShares();
 };
 
 export const getTotalStaked = async (
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
-): Promise<BigNumber> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
+): Promise<bigint> => {
+  const contract = getStakingContract(network, provider);
 
-  const totalStaked: BigNumber = await staking.getTotalAmountOfStakedAurora();
-
-  return totalStaked;
+  return contract.getTotalAmountOfStakedAurora();
 };
 
 export const getPendingWithdrawals = async (
   streamIds: number[],
   streamDecimals: number[],
   account: string,
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
 ): Promise<
-  { amount: BigNumber; releaseTime: number; id: number; decimals: number }[]
+  { amount: bigint; releaseTime: number; id: number; decimals: number }[]
 > => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  const contract = getStakingContract(network, provider);
 
   const pendingAmounts = await Promise.all(
-    streamIds.map(async (id) => {
-      const pending: BigNumber = await staking.getPending(id, account);
-
-      return pending;
-    }),
+    streamIds.map(async (id) => contract.getPending(id, account)),
   );
 
   const pendingReleaseTimes = await Promise.all(
-    streamIds.map(async (id) => {
-      const releaseTime: BigNumber = staking.getReleaseTime(id, account);
-
-      return releaseTime;
-    }),
+    streamIds.map(async (id) => contract.getReleaseTime(id, account)),
   );
 
   const pendingWithdrawals = pendingAmounts
@@ -121,7 +86,7 @@ export const getPendingWithdrawals = async (
 
       return {
         amount,
-        releaseTime: releaseTime.toNumber() * 1000,
+        releaseTime: Number(releaseTime) * 1000,
         id,
         decimals,
       };
@@ -135,50 +100,35 @@ export const getPendingWithdrawals = async (
 export const getStreamedAmounts = async (
   streamIds: number[],
   account: string,
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
 ): Promise<BigNumber[]> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  const contract = getStakingContract(network, provider);
 
   try {
     const latestStreamedAmounts = await Promise.all(
-      streamIds.map(async (id) => {
-        const claimableAmount: BigNumber =
-          await staking.getStreamClaimableAmount(id, account);
-
-        return claimableAmount;
-      }),
+      streamIds.map(async (id) =>
+        contract.getStreamClaimableAmount(id, account),
+      ),
     );
 
     return latestStreamedAmounts;
   } catch (error) {
     logger.error('Zero staked shares?', error);
 
-    return streamIds.map(() => ethers.BigNumber.from(0));
+    return streamIds.map(() => 0n);
   }
 };
 
 export const getStreamsSchedule = async (
   streamIds: number[],
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
 ): Promise<StreamSchedule[]> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  const contract = getStakingContract(network, provider);
 
   const streamsSchedule = await Promise.all(
-    streamIds.map(async (id) => {
-      const schedule: BigNumber[][] = staking.getStreamSchedule(id);
-
-      return schedule;
-    }),
+    streamIds.map(async (id) => contract.getStreamSchedule(id)),
   );
 
   return streamsSchedule.map((schedule) => {
@@ -209,48 +159,44 @@ export const getStreamsProgress = (
   return streamsProgress;
 };
 
-export const getVoteSupply = (voteSchedule: StreamSchedule): BigNumber => {
+export const getVoteSupply = (voteSchedule: StreamSchedule): bigint => {
   const { startTime, endTime } = getScheduleStartAndEndTimes(voteSchedule);
 
   const totalSupply = voteSchedule.scheduleRewards[0];
   const circulatingSupply = totalSupply
     ? totalSupply.mul(Date.now() - startTime).div(endTime - startTime)
-    : ethers.BigNumber.from(0);
+    : 0n;
 
   return circulatingSupply;
 };
 
 export const calculateStakedPctOfSupply = (
-  totalStaked: BigNumber,
+  totalStaked: bigint,
   auroraPrice: number,
   auroraMarketCap: number,
 ): number => {
   const circulatingSupply = auroraMarketCap / auroraPrice;
   // Compounding staked AURORA
-  const stakedAurora = Number(ethers.utils.formatUnits(totalStaked, 18));
+  const stakedAurora = Number(ethers.formatUnits(totalStaked, 18));
   const pct = (stakedAurora * 100) / circulatingSupply;
 
   return pct;
 };
 
 export const getIsPaused = async (
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
 ): Promise<boolean> => {
-  const staking = new ethers.Contract(
-    networkConfig.stakingContractAddress,
-    stakingAbi,
-    provider,
-  );
+  const contract = getStakingContract(network, provider);
 
-  const pausedFlag = await staking.paused();
+  const pausedFlag = await contract.paused();
 
-  return pausedFlag.toNumber() === 1;
+  return Number(pausedFlag) === 1;
 };
 
 export const approveStaking = async (
-  provider: providers.JsonRpcProvider,
-  networkConfig: AuroraNetworkConfig,
+  provider: JsonRpcProvider,
+  network: AuroraNetwork,
 ) => {
   const auroraToken = new ethers.Contract(
     networkConfig.tokenContractAddress,
@@ -271,7 +217,7 @@ export const approveStaking = async (
 export const stake = async (
   amount: BigNumber,
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,
@@ -288,7 +234,7 @@ export const stake = async (
 export const unstake = async (
   amount: BigNumber,
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,
@@ -304,7 +250,7 @@ export const unstake = async (
 
 export const unstakeAll = async (
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,
@@ -321,7 +267,7 @@ export const unstakeAll = async (
 export const withdraw = async (
   streamId: number,
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,
@@ -337,7 +283,7 @@ export const withdraw = async (
 
 export const withdrawAll = async (
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,
@@ -354,7 +300,7 @@ export const withdrawAll = async (
 export const claim = async (
   streamId: number,
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,
@@ -370,7 +316,7 @@ export const claim = async (
 
 export const claimAll = async (
   provider: providers.Web3Provider,
-  networkConfig: AuroraNetworkConfig,
+  network: AuroraNetwork,
 ) => {
   const staking = new ethers.Contract(
     networkConfig.stakingContractAddress,

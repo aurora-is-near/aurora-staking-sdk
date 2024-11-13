@@ -1,4 +1,3 @@
-import { ethers } from 'ethers';
 import { type AuroraNetwork, AuroraNetworkConfig } from './types/network.js';
 
 export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
@@ -13,7 +12,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'trisolaris',
         symbol: 'TRI',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0x42Fe1195219bBD26a530c189624CB4B268527596',
         id: 2,
@@ -23,7 +22,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'bastion-protocol',
         symbol: 'BSTN',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0xB8793D1c6cc0cfE9C128700dCF2b3DAA072ed7EE',
         id: 3,
@@ -33,7 +32,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'vote',
         symbol: 'VOTE',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0xB8793D1c6cc0cfE9C128700dCF2b3DAA072ed7EE', // Dummy, reusing bastion.
         id: 3, // Dummy, reusing bastion
@@ -51,7 +50,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'aurigami',
         symbol: 'PLY',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0x09C9D464b58d96837f8d8b6f4d9fE4aD408d3A4f',
         id: 1,
@@ -61,7 +60,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'trisolaris',
         symbol: 'TRI',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0xFa94348467f64D5A457F75F8bc40495D33c65aBB',
         id: 2,
@@ -71,7 +70,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'bastion-protocol',
         symbol: 'BSTN',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0x9f1f933c660a1dc856f0e0fe058435879c5ccef0',
         id: 3,
@@ -81,7 +80,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'usn',
         symbol: 'USN',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0x5183e1b1091804bc2602586919e6880ac1cf2896',
         id: 4,
@@ -91,7 +90,7 @@ export const config: Record<AuroraNetwork, AuroraNetworkConfig> = {
         coingeckoName: 'vote',
         symbol: 'VOTE',
         decimals: 18,
-        amount: ethers.BigNumber.from(0),
+        amount: 0n,
         percentage: 0,
         address: '0x6edE987A51d7b4d3945E7a76Af59Ff2b968910A8',
         id: 5,

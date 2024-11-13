@@ -6,9 +6,8 @@ import {
   useRef,
   useState,
 } from 'react';
-import { BigNumber, ethers } from 'ethers';
+import { ethers, parseUnits } from 'ethers';
 import { useAccount, useChainId, useSwitchChain } from 'wagmi';
-import { parseFixed } from '@ethersproject/bignumber';
 import {
   approveStaking,
   calculateStakedPctOfSupply,
@@ -36,10 +35,11 @@ import { useWeb3Provider } from './hooks/useWeb3Provider.js';
 import { Stream } from './types/stream.js';
 import { Withdrawal } from './types/withdrawal.js';
 import { StakingContext } from './context.js';
-import { erc20abi } from './abis/erc20.js';
 import { AuroraNetwork } from './types/network.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
+import { getTokenContract } from './contracts.js';
+import { erc20Abi } from './abis/erc20.js';
 
 type StakingProviderProps = {
   network: AuroraNetwork;
@@ -68,41 +68,39 @@ export const StakingProvider = ({
     [tokenStreams],
   );
 
-  const voteIndex = tokenStreams.findIndex((s) => s.symbol === 'VOTE');
-  const voteId = tokenStreams.find((s) => s.symbol === 'VOTE')!.id;
+  const voteTokenConfig = tokenStreams.find((s) => s.symbol === 'VOTE');
+
+  if (!voteTokenConfig) {
+    throw new Error('VOTE token not found in tokenStreams');
+  }
+
+  const voteIndex = tokenStreams.indexOf(voteTokenConfig);
+  const voteId = voteTokenConfig.id;
 
   const { current: provider } = useRef(
-    new ethers.providers.JsonRpcBatchProvider(networkConfig.rpcUrl),
+    new ethers.JsonRpcProvider(networkConfig.rpcUrl),
   );
 
   const { current: voteToken } = useRef(
-    new ethers.Contract(tokenStreams[voteIndex]!.address, erc20abi, provider),
+    getTokenContract(voteTokenConfig.address, provider),
   );
 
   const { current: auroraToken } = useRef(
-    new ethers.Contract(networkConfig.tokenContractAddress, erc20abi, provider),
+    getTokenContract(networkConfig.tokenContractAddress, provider),
   );
 
   const [accountSynced, setAccountSynced] = useState(false);
-  const [balance, setBalance] = useState(ethers.BigNumber.from(0));
-  const [voteBalance, setVoteBalance] = useState(ethers.BigNumber.from(0));
-  const [voteTotalBalance, setVoteTotalBalance] = useState(
-    ethers.BigNumber.from(0),
-  );
-
-  const [withdrawableVoteBalance, setWithdrawableVoteBalance] = useState(
-    ethers.BigNumber.from(0),
-  );
-
+  const [balance, setBalance] = useState(0n);
+  const [voteBalance, setVoteBalance] = useState(0n);
+  const [voteTotalBalance, setVoteTotalBalance] = useState(0n);
+  const [withdrawableVoteBalance, setWithdrawableVoteBalance] = useState(0n);
   const [votePowerPct, setVotePowerPct] = useState(0);
-  const [voteSupply, setVoteSupply] = useState(ethers.BigNumber.from(0));
-  const [allowance, setAllowance] = useState(ethers.BigNumber.from(0));
-  const [deposit, setDeposit] = useState(ethers.BigNumber.from(0));
-  const [userSharesValue, setUserSharesValue] = useState(
-    ethers.BigNumber.from(0),
-  );
+  const [voteSupply, setVoteSupply] = useState(0n);
+  const [allowance, setAllowance] = useState(0n);
+  const [deposit, setDeposit] = useState(0n);
+  const [userSharesValue, setUserSharesValue] = useState(0n);
 
-  const [userShares, setUserShares] = useState(ethers.BigNumber.from(0));
+  const [userShares, setUserShares] = useState(0n);
   const [pendingWithdrawals, setPendingWithdrawals] = useState<
     Withdrawal[] | undefined
   >();
@@ -118,21 +116,16 @@ export const StakingProvider = ({
   const chainId = useChainId();
 
   useEffect(() => {
-    if (voteSupply.isZero()) {
+    if (Number(voteSupply) === 0) {
       return;
     }
 
     const votePower =
       (Number(
-        ethers.utils.formatUnits(
-          voteTotalBalance,
-          streamDecimals[voteIndex + 1],
-        ),
+        ethers.formatUnits(voteTotalBalance, streamDecimals[voteIndex + 1]),
       ) *
         100) /
-      Number(
-        ethers.utils.formatUnits(voteSupply, streamDecimals[voteIndex + 1]),
-      );
+      Number(ethers.formatUnits(voteSupply, streamDecimals[voteIndex + 1]));
 
     setVotePowerPct(votePower);
   }, [streamDecimals, voteIndex, voteSupply, voteTotalBalance]);
@@ -169,32 +162,26 @@ export const StakingProvider = ({
         auroraToken.balanceOf(account),
         voteToken.balanceOf(account),
         auroraToken.allowance(account, networkConfig.stakingContractAddress),
-        getDeposit(account, provider, networkConfig),
-        getUserShares(account, 0, provider, networkConfig),
-        getTotalShares(provider, networkConfig),
-        getTotalStaked(provider, networkConfig),
+        getDeposit(account, provider, network),
+        getUserShares(account, 0, provider, network),
+        getTotalShares(provider, network),
+        getTotalStaked(provider, network),
         getPendingWithdrawals(
           streamIds,
           streamDecimals,
           account,
           provider,
-          networkConfig,
+          network,
         ),
-        getStreamedAmounts(
-          streamIds.slice(1),
-          account,
-          provider,
-          networkConfig,
-        ),
+        getStreamedAmounts(streamIds.slice(1), account, provider, network),
         fetchStreamPrices(),
-        getIsPaused(provider, networkConfig),
+        getIsPaused(provider, network),
       ]);
 
       setBalance(newBalance);
       setVoteBalance(newVoteBalance);
       const newWithdrawableVoteBalance =
-        newPendingWithdrawals.find((w) => w.id === voteId)?.amount ??
-        BigNumber.from(0);
+        newPendingWithdrawals.find((w) => w.id === voteId)?.amount ?? 0n;
 
       setWithdrawableVoteBalance(newWithdrawableVoteBalance);
       setVoteTotalBalance(
@@ -217,13 +204,13 @@ export const StakingProvider = ({
 
           return {
             ...stream,
-            amount: amount ?? ethers.BigNumber.from(0),
+            amount: amount ?? 0n,
             price: streamPrices.prices[i + 1],
           };
         }),
       );
 
-      if (!totalShares.isZero()) {
+      if (Number(totalShares) !== 0) {
         setUserSharesValue(totalStaked.mul(userShares).div(totalShares));
       }
 
@@ -235,7 +222,8 @@ export const StakingProvider = ({
     account,
     auroraToken,
     fetchStreamPrices,
-    networkConfig,
+    network,
+    networkConfig.stakingContractAddress,
     provider,
     streamDecimals,
     streamIds,
@@ -260,8 +248,8 @@ export const StakingProvider = ({
 
   const init = useCallback(async () => {
     const [totalStaked, streamsSchedule, streamPrices] = await Promise.all([
-      getTotalStaked(provider, networkConfig),
-      getStreamsSchedule(streamIds, provider, networkConfig),
+      getTotalStaked(provider, network),
+      getStreamsSchedule(streamIds, provider, network),
       fetchStreamPrices(),
     ]);
 
@@ -293,14 +281,11 @@ export const StakingProvider = ({
           apr: aprs.streams[i],
           percentage: streamsProgress[i + 1] ?? 0,
           startTimestamp: firstScheduleTime
-            ? firstScheduleTime.toNumber() * 1000
+            ? Number(firstScheduleTime) * 1000
             : 0,
-          endTimestamp: lastScheduleTime
-            ? lastScheduleTime.toNumber() * 1000
-            : 0,
+          endTimestamp: lastScheduleTime ? Number(lastScheduleTime) * 1000 : 0,
           isStarted:
-            firstScheduleTime &&
-            Date.now() >= firstScheduleTime.toNumber() * 1000,
+            firstScheduleTime && Date.now() >= Number(firstScheduleTime) * 1000,
           price: streamPrices.prices[i + 1],
         };
       }),
@@ -322,7 +307,7 @@ export const StakingProvider = ({
     setStakedPct(newStakedPct);
   }, [
     fetchStreamPrices,
-    networkConfig,
+    network,
     provider,
     streamDecimals,
     streamIds,
@@ -340,10 +325,10 @@ export const StakingProvider = ({
   useEffect(() => {
     if (!isConnected) {
       // Hide balances if user's MetaMask is locked.
-      setUserSharesValue(ethers.BigNumber.from(0));
-      setBalance(ethers.BigNumber.from(0));
-      setAllowance(ethers.BigNumber.from(0));
-      setDeposit(ethers.BigNumber.from(0));
+      setUserSharesValue(0n);
+      setBalance(0n);
+      setAllowance(0n);
+      setDeposit(0n);
 
       return;
     }
@@ -362,13 +347,20 @@ export const StakingProvider = ({
       return;
     }
 
-    await approveStaking(web3Provider, networkConfig);
+    await approveStaking(web3Provider, network);
     await sleep(2000);
     await syncAllowance();
-  }, [chainId, networkConfig, switchChain, syncAllowance, web3Provider]);
+  }, [
+    chainId,
+    network,
+    networkConfig,
+    switchChain,
+    syncAllowance,
+    web3Provider,
+  ]);
 
   const stakeAndSync = useCallback(
-    async (amount: BigNumber) => {
+    async (amount: bigint) => {
       if (!web3Provider) {
         return;
       }
@@ -379,15 +371,22 @@ export const StakingProvider = ({
         return;
       }
 
-      await stake(amount, web3Provider, networkConfig);
+      await stake(amount, web3Provider, network);
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
+    [
+      chainId,
+      network,
+      networkConfig,
+      switchChain,
+      syncConnectedAccount,
+      web3Provider,
+    ],
   );
 
   const unstakeAndSync = useCallback(
-    async (amount: BigNumber) => {
+    async (amount: bigint) => {
       if (!web3Provider) {
         return;
       }
@@ -398,11 +397,18 @@ export const StakingProvider = ({
         return;
       }
 
-      await unstake(amount, web3Provider, networkConfig);
+      await unstake(amount, web3Provider, network);
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
+    [
+      chainId,
+      network,
+      networkConfig,
+      switchChain,
+      syncConnectedAccount,
+      web3Provider,
+    ],
   );
 
   const unstakeAllAndSync = useCallback(async () => {
@@ -416,10 +422,17 @@ export const StakingProvider = ({
       return;
     }
 
-    await unstakeAll(web3Provider, networkConfig);
+    await unstakeAll(web3Provider, network);
     await sleep(2000);
     await syncConnectedAccount();
-  }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
+  }, [
+    chainId,
+    network,
+    networkConfig,
+    switchChain,
+    syncConnectedAccount,
+    web3Provider,
+  ]);
 
   const withdrawAndSync = useCallback(
     async (streamId: number) => {
@@ -433,11 +446,18 @@ export const StakingProvider = ({
         return;
       }
 
-      await withdraw(streamId, web3Provider, networkConfig);
+      await withdraw(streamId, web3Provider, network);
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
+    [
+      chainId,
+      network,
+      networkConfig,
+      switchChain,
+      syncConnectedAccount,
+      web3Provider,
+    ],
   );
 
   const withdrawAllAndSync = useCallback(async () => {
@@ -451,10 +471,17 @@ export const StakingProvider = ({
       return;
     }
 
-    await withdrawAll(web3Provider, networkConfig);
+    await withdrawAll(web3Provider, network);
     await sleep(2000);
     await syncConnectedAccount();
-  }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
+  }, [
+    chainId,
+    network,
+    networkConfig,
+    switchChain,
+    syncConnectedAccount,
+    web3Provider,
+  ]);
 
   const claimAndSync = useCallback(
     async (streamId: number) => {
@@ -468,11 +495,18 @@ export const StakingProvider = ({
         return;
       }
 
-      await claim(streamId, web3Provider, networkConfig);
+      await claim(streamId, web3Provider, network);
       await sleep(2000);
       await syncConnectedAccount();
     },
-    [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider],
+    [
+      chainId,
+      network,
+      networkConfig,
+      switchChain,
+      syncConnectedAccount,
+      web3Provider,
+    ],
   );
 
   const claimAllAndSync = useCallback(async () => {
@@ -486,13 +520,20 @@ export const StakingProvider = ({
       return;
     }
 
-    await claimAll(web3Provider, networkConfig);
+    await claimAll(web3Provider, network);
     await sleep(2000);
     await syncConnectedAccount();
-  }, [chainId, networkConfig, switchChain, syncConnectedAccount, web3Provider]);
+  }, [
+    chainId,
+    network,
+    networkConfig,
+    switchChain,
+    syncConnectedAccount,
+    web3Provider,
+  ]);
 
-  const hasPendingRewards = streams.some(({ amount, decimals }) =>
-    amount?.gt(parseFixed('0.0001', decimals)),
+  const hasPendingRewards = streams.some(
+    ({ amount, decimals }) => amount > parseUnits('0.0001', decimals),
   );
 
   const value = useMemo(

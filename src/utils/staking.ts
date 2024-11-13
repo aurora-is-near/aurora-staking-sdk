@@ -5,6 +5,7 @@ import { type AuroraNetworkConfig } from '../types/network.js';
 import { logger } from '../logger.js';
 import { isDefined } from './is-defined.js';
 import { StreamSchedule } from '../types/stream.js';
+import { getScheduleStartAndEndTimes } from './schedule.js';
 
 export const getDeposit = async (
   account: string,
@@ -192,24 +193,6 @@ export const getStreamsSchedule = async (
       scheduleRewards,
     };
   });
-};
-
-const getScheduleStartAndEndTimes = (schedule: StreamSchedule) => {
-  const startTime = schedule.scheduleTimes[0];
-  const endTime = schedule.scheduleTimes[schedule.scheduleTimes.length - 1];
-
-  if (!isDefined(startTime)) {
-    throw new Error('Invalid schedule: start time not found');
-  }
-
-  if (!isDefined(endTime)) {
-    throw new Error('Invalid schedule: end time not found');
-  }
-
-  return {
-    startTime: startTime.toNumber() * 1000,
-    endTime: endTime.toNumber() * 1000,
-  };
 };
 
 export const getStreamsProgress = (

@@ -32,7 +32,6 @@
     "react": "*"
   },
   "dependencies": {
-    "abitype": "^1.0.6",
     "date-fns": "^4.1.0",
     "ethers": "5.6.9",
     "wagmi": "2.5.19"

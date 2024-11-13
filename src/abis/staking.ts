@@ -1649,4 +1649,4 @@ export const stakingAbi = [
     stateMutability: 'payable',
     type: 'constructor',
   },
-] as const;
+];

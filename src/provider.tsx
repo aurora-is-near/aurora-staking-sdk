@@ -331,7 +331,9 @@ export const StakingProvider = ({
 
   useEffect(() => {
     init().catch((error) => {
-      logger.error(`Failed to initialize Staking Provider: ${error}`);
+      logger.error(
+        new Error(`Failed to initialize staking provider: ${error.message}`),
+      );
     });
   }, [init]);
 

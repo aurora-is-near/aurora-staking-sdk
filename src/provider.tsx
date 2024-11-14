@@ -138,13 +138,19 @@ export const StakingProvider = ({
   }, [streamDecimals, voteIndex, voteSupply, voteTotalBalance]);
 
   const fetchStreamPrices = useCallback(async () => {
-    return getStreamPrices([
+    const streamPrices = await getStreamPrices([
       'aurora-near',
       ...tokenStreams
         .map((stream) => stream.coingeckoName)
         .filter((name) => name !== 'vote'),
     ]);
-  }, [getStreamPrices, tokenStreams]);
+
+    // Insert 0 for the price of the vote token (which was filtered out above)
+    streamPrices.prices.splice(voteIndex, 0, 0);
+    streamPrices.marketCaps.splice(voteIndex, 0, 0);
+
+    return streamPrices;
+  }, [getStreamPrices, tokenStreams, voteIndex]);
 
   const syncConnectedAccount = useCallback(async () => {
     try {

@@ -195,20 +195,6 @@ export const getStreamsSchedule = async (
   });
 };
 
-export const getStreamsProgress = (
-  streamsSchedule: StreamSchedule[],
-): number[] => {
-  const streamsProgress = streamsSchedule.map((schedule) => {
-    const { startTime, endTime } = getScheduleStartAndEndTimes(schedule);
-
-    const progress = ((Date.now() - startTime) / (endTime - startTime)) * 100;
-
-    return progress > 10 ? progress : 10;
-  });
-
-  return streamsProgress;
-};
-
 export const getVoteSupply = (voteSchedule: StreamSchedule): BigNumber => {
   const { startTime, endTime } = getScheduleStartAndEndTimes(voteSchedule);
 

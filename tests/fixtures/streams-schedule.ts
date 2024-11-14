@@ -1,7 +1,8 @@
 import { BigNumber } from 'ethers';
+import { StreamSchedule } from '../../src/types/stream';
 
 // A snapshot of data logged from Aurora Plus
-export const streamsSchedule = [
+export const streamsSchedule: StreamSchedule[] = [
   {
     scheduleTimes: [
       BigNumber.from('0x6283b870'),

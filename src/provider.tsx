@@ -17,7 +17,6 @@ import {
   getIsPaused,
   getPendingWithdrawals,
   getStreamedAmounts,
-  getStreamsProgress,
   getStreamsSchedule,
   getTotalShares,
   getTotalStaked,
@@ -40,6 +39,7 @@ import { AuroraNetwork } from './types/network.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
 import { calculateStakedPctOfSupply } from './utils/supply.js';
+import { getStreamsProgress } from './utils/progress.js';
 
 type StakingProviderProps = {
   network: AuroraNetwork;

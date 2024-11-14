@@ -1,7 +1,7 @@
 import { calculateStakedPctOfSupply } from '../../../src/utils/supply';
 import { getNumberTo18Decimals } from '../../utils/get-number-to-18-decimals';
 
-describe('APR', () => {
+describe('Supply', () => {
   describe('calculateStakedPctOfSupply', () => {
     it('returns the expected result with 1% staked', () => {
       const result = calculateStakedPctOfSupply({

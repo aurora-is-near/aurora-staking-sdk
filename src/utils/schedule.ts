@@ -5,12 +5,8 @@ export const getScheduleStartAndEndTimes = (schedule: StreamSchedule) => {
   const startTime = schedule.scheduleTimes[0];
   const endTime = schedule.scheduleTimes[schedule.scheduleTimes.length - 1];
 
-  if (!isDefined(startTime)) {
-    throw new Error('Invalid schedule: start time not found');
-  }
-
-  if (!isDefined(endTime)) {
-    throw new Error('Invalid schedule: end time not found');
+  if (!isDefined(startTime) || !isDefined(endTime)) {
+    throw new Error('Invalid schedule: no schedule times found');
   }
 
   return {

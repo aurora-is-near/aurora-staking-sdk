@@ -11,7 +11,6 @@ import { useAccount, useChainId, useSwitchChain } from 'wagmi';
 import { parseFixed } from '@ethersproject/bignumber';
 import {
   approveStaking,
-  calculateStakedPctOfSupply,
   claim,
   claimAll,
   getDeposit,
@@ -40,6 +39,7 @@ import { erc20abi } from './abis/erc20.js';
 import { AuroraNetwork } from './types/network.js';
 import { config } from './config.js';
 import { logger } from './logger.js';
+import { calculateStakedPctOfSupply } from './utils/supply.js';
 
 type StakingProviderProps = {
   network: AuroraNetwork;
@@ -319,11 +319,11 @@ export const StakingProvider = ({
       return;
     }
 
-    const newStakedPct = calculateStakedPctOfSupply(
+    const newStakedPct = calculateStakedPctOfSupply({
       totalStaked,
-      newPrice,
-      newMarketCap,
-    );
+      auroraPrice: newPrice,
+      auroraMarketCap: newMarketCap,
+    });
 
     setStakedPct(newStakedPct);
   }, [

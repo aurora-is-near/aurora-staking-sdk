@@ -220,19 +220,6 @@ export const getVoteSupply = (voteSchedule: StreamSchedule): BigNumber => {
   return circulatingSupply;
 };
 
-export const calculateStakedPctOfSupply = (
-  totalStaked: BigNumber,
-  auroraPrice: number,
-  auroraMarketCap: number,
-): number => {
-  const circulatingSupply = auroraMarketCap / auroraPrice;
-  // Compounding staked AURORA
-  const stakedAurora = Number(ethers.utils.formatUnits(totalStaked, 18));
-  const pct = (stakedAurora * 100) / circulatingSupply;
-
-  return pct;
-};
-
 export const getIsPaused = async (
   provider: providers.JsonRpcProvider,
   networkConfig: AuroraNetworkConfig,

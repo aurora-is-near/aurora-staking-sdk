@@ -230,7 +230,7 @@ export const StakingProvider = ({
       );
 
       if (!totalShares.isZero()) {
-        setUserSharesValue(totalStaked.mul(userShares).div(totalShares));
+        setUserSharesValue(totalStaked.mul(newUserShares).div(totalShares));
       }
 
       setAccountSynced(true);
@@ -245,7 +245,6 @@ export const StakingProvider = ({
     provider,
     streamDecimals,
     streamIds,
-    userShares,
     voteId,
     voteIndex,
     voteToken,
